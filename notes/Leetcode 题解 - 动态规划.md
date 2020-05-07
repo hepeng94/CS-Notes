@@ -20,6 +20,7 @@
     * [2. 一组整数对能够构成的最长链](#2-一组整数对能够构成的最长链)
     * [3. 最长摆动子序列](#3-最长摆动子序列)
 * [最长公共子序列](#最长公共子序列)
+    * [1. 最长公共子序列](#1-最长公共子序列)
 * [0-1 背包](#0-1-背包)
     * [1. 划分数组为和相等的两部分](#1-划分数组为和相等的两部分)
     * [2. 改变一组数的正负号使得它们的和为一给定数](#2-改变一组数的正负号使得它们的和为一给定数)
@@ -138,7 +139,7 @@ private int rob(int[] nums, int first, int last) {
 
 ## 4. 信件错排
 
-题目描述：有 N 个 信 和 信封，它们被打乱，求错误装信方式的数量。
+题目描述：有 N 个 信 和 信封，它们被打乱，求错误装信方式的数量（所有信封都没有装各自的信）。
 
 定义一个数组 dp 存储错误方式数量，dp[i] 表示前 i 个信和信封的错误方式数量。假设第 i 个信装到第 j 个信封里面，而第 j 个信装到第 k 个信封里面。根据 i 和 k 是否相等，有两种情况：
 
@@ -625,21 +626,27 @@ public int wiggleMaxLength(int[] nums) {
 - 在最长递增子序列中，dp[i] 表示以 S<sub>i</sub> 为结尾的最长递增子序列长度，子序列必须包含 S<sub>i</sub> ；在最长公共子序列中，dp[i][j] 表示 S1 中前 i 个字符与 S2 中前 j 个字符的最长公共子序列长度，不一定包含 S1<sub>i</sub> 和 S2<sub>j</sub>。
 - 在求最终解时，最长公共子序列中 dp[N][M] 就是最终解，而最长递增子序列中 dp[N] 不是最终解，因为以 S<sub>N</sub> 为结尾的最长递增子序列不一定是整个序列最长递增子序列，需要遍历一遍 dp 数组找到最大者。
 
+## 1. 最长公共子序列
+
+1143\. Longest Common Subsequence
+
+[Leetcode](https://leetcode.com/problems/longest-common-subsequence/) / [力扣](https://leetcode-cn.com/problems/longest-common-subsequence/)
+
 ```java
-public int lengthOfLCS(int[] nums1, int[] nums2) {
-    int n1 = nums1.length, n2 = nums2.length;
-    int[][] dp = new int[n1 + 1][n2 + 1];
-    for (int i = 1; i <= n1; i++) {
-        for (int j = 1; j <= n2; j++) {
-            if (nums1[i - 1] == nums2[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1] + 1;
-            } else {
-                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+    public int longestCommonSubsequence(String text1, String text2) {
+        int n1 = text1.length(), n2 = text2.length();
+        int[][] dp = new int[n1 + 1][n2 + 1];
+        for (int i = 1; i <= n1; i++) {
+            for (int j = 1; j <= n2; j++) {
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
             }
         }
+        return dp[n1][n2];
     }
-    return dp[n1][n2];
-}
 ```
 
 # 0-1 背包
@@ -1048,7 +1055,10 @@ public int combinationSum4(int[] nums, int target) {
 
 题目描述：交易之后需要有一天的冷却时间。
 
-<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ffd96b99-8009-487c-8e98-11c9d44ef14f.png" width="300px"> </div><br>
+
+该题为马尔可夫过程，分为A观望，B持股，C冷却三个状态
+状态转移图：A-(观望)->A, A-(买入｜-price)->B, B-(观望)->B, B-(卖出|+price)->C, C-(冷却)->A
+可用维特比算法求解
 
 ```java
 public int maxProfit(int[] prices) {
@@ -1056,19 +1066,17 @@ public int maxProfit(int[] prices) {
         return 0;
     }
     int N = prices.length;
-    int[] buy = new int[N];
-    int[] s1 = new int[N];
-    int[] sell = new int[N];
-    int[] s2 = new int[N];
-    s1[0] = buy[0] = -prices[0];
-    sell[0] = s2[0] = 0;
+    int[] A = new int[N];
+    int[] B = new int[N];
+    int[] C = new int[N];
+    A[0] = 0;
+    B[0] = C[0] = -prices[0];
     for (int i = 1; i < N; i++) {
-        buy[i] = s2[i - 1] - prices[i];
-        s1[i] = Math.max(buy[i - 1], s1[i - 1]);
-        sell[i] = Math.max(buy[i - 1], s1[i - 1]) + prices[i];
-        s2[i] = Math.max(s2[i - 1], sell[i - 1]);
+        A[i] = Math.max(A[i - 1], C[i - 1]);
+        B[i] = Math.max(B[i - 1], A[i - 1] - prices[i]);
+        C[i] = B[i - 1] + prices[i];
     }
-    return Math.max(sell[N - 1], s2[N - 1]);
+    return Math.max(A[N - 1], C[N - 1]);
 }
 ```
 
@@ -1091,24 +1099,22 @@ The total profit is ((8 - 1) - 2) + ((9 - 4) - 2) = 8.
 
 题目描述：每交易一次，都要支付一定的费用。
 
-<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/1e2c588c-72b7-445e-aacb-d55dc8a88c29.png" width="300px"> </div><br>
+
+分为A观望，B持股，两个状态
+状态转移图：A-(观望)->A, A-(买入|-price)->B, B-(观望)->B, B-(卖出|+price|-fee)->A
 
 ```java
 public int maxProfit(int[] prices, int fee) {
     int N = prices.length;
-    int[] buy = new int[N];
-    int[] s1 = new int[N];
-    int[] sell = new int[N];
-    int[] s2 = new int[N];
-    s1[0] = buy[0] = -prices[0];
-    sell[0] = s2[0] = 0;
+    int[] A = new int[N];
+    int[] B = new int[N];
+    A[0] = 0;
+    B[0] = -prices[0];
     for (int i = 1; i < N; i++) {
-        buy[i] = Math.max(sell[i - 1], s2[i - 1]) - prices[i];
-        s1[i] = Math.max(buy[i - 1], s1[i - 1]);
-        sell[i] = Math.max(buy[i - 1], s1[i - 1]) - fee + prices[i];
-        s2[i] = Math.max(s2[i - 1], sell[i - 1]);
+        A[i] = Math.max(A[i - 1], B[i - 1] + prices[i] -fee);
+        B[i] = Math.max(A[i - 1] - prices[i], B[i - 1]);
     }
-    return Math.max(sell[N - 1], s2[N - 1]);
+    return A[N - 1];
 }
 ```
 
